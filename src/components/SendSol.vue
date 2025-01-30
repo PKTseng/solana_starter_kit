@@ -1,7 +1,14 @@
 <template>
   <div class="transfer-form">
     <input v-model="recipient" placeholder="Recipient address" class="transfer-input" />
-    <input v-model="amount" type="number" placeholder="Amount in SOL" class="transfer-input" />
+    <input
+      v-model="amount"
+      type="number"
+      placeholder="Amount in SOL"
+      class="transfer-input"
+      min="0"
+      step="any"
+    />
 
     <button :disabled="!isValid" class="transfer-button" @click="sendSol">
       {{ loading ? 'Sending...' : 'Send SOL' }}
