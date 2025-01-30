@@ -1,0 +1,346 @@
+{
+  "version": "0.1.0",
+  "name": "amm_dex",
+  "instructions": [
+    {
+      "name": "initializePool",
+      "docs": ["初始化一個新的流動性池"],
+      "accounts": [
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenBMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenBVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "fees",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "addLiquidity",
+      "accounts": [
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenBVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenA",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenB",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userLpToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountADesired",
+          "type": "u64"
+        },
+        {
+          "name": "amountBDesired",
+          "type": "u64"
+        },
+        {
+          "name": "amountAMin",
+          "type": "u64"
+        },
+        {
+          "name": "amountBMin",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "removeLiquidity",
+      "accounts": [
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenBVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenA",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenB",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userLpToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "liquidity",
+          "type": "u64"
+        },
+        {
+          "name": "amountAMin",
+          "type": "u64"
+        },
+        {
+          "name": "amountBMin",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "swap",
+      "accounts": [
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenBVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userSourceToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userDestinationToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amountIn",
+          "type": "u64"
+        },
+        {
+          "name": "minAmountOut",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Pool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokenAMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenBMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenAVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokenBVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "lpMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "fees",
+            "type": "u16"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "totalLiquidity",
+            "type": "u64"
+          },
+          {
+            "name": "lastBlockTimestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InsufficientLiquidity",
+      "msg": "Insufficient liquidity in pool"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidFee",
+      "msg": "Fee must be between 0 and 10000"
+    },
+    {
+      "code": 6002,
+      "name": "SlippageExceeded",
+      "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidInput",
+      "msg": "Invalid input amount"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidOutput",
+      "msg": "Invalid output amount"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidTimestamp",
+      "msg": "Invalid timestamp"
+    }
+  ],
+  "types": [
+    {
+      "name": "PoolFees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tradeFee",
+            "type": "u16"
+          },
+          {
+            "name": "protocolFee",
+            "type": "u16"
+          }
+        ]
+      }
+    }
+  ]
+}
