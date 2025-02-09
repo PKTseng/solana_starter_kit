@@ -1,9 +1,10 @@
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 export const useWalletStore = defineStore('wallet', () => {
-  const connection = new Connection('https://api.devnet.solana.com')
+  // const connection = new Connection('https://api.devnet.solana.com')
+  const connection = new Connection(clusterApiUrl('devnet'))
   const publicKey = ref<PublicKey | null>(null)
   const connected = computed(() => publicKey.value !== null)
 

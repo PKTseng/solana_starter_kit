@@ -39,13 +39,25 @@ const isValid = computed(() => {
 
 const sendSol = async () => {
   if (!walletStore.publicKey) {
-    console.log('wallet is not connect')
+    console.log('wallet is not connected')
     return
   }
 
   loading.value = true
   try {
-    const transaction = new Transaction().add(
+    // 建立交易
+    const transaction = new Transaction()
+
+    // 設置費用支付者為發送者的錢包
+    transaction.feePayer = walletStore.publicKey
+
+    // 使用 walletStore 中的 connection 獲取最新的 blockhash
+    const { blockhash, lastValidBlockHeight } = await walletStore.connection.getLatestBlockhash()
+    transaction.recentBlockhash = blockhash
+    transaction.lastValidBlockHeight = lastValidBlockHeight
+
+    // 添加轉帳指令
+    transaction.add(
       SystemProgram.transfer({
         fromPubkey: walletStore.publicKey,
         toPubkey: new PublicKey(recipient.value),
@@ -63,13 +75,18 @@ const sendSol = async () => {
         lastValidBlockHeight: transaction.lastValidBlockHeight!,
       }
 
+      // 使用 walletStore 中的 connection 確認交易
       await walletStore.connection.confirmTransaction(confirmationStrategy)
+
+      console.log(
+        `Transaction confirmed: https://explorer.solana.com/tx/${signedTransaction.signature}?cluster=devnet`,
+      )
     }
 
     recipient.value = ''
     amount.value = ''
   } catch (error) {
-    console.log(error)
+    console.error('Error:', error)
   } finally {
     loading.value = false
   }

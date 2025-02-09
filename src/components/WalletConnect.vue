@@ -39,17 +39,17 @@ const disconnectedWallet = () => walletStore.disconnectWallet()
   cursor: pointer;
   transition: background-color 0.3s ease;
 
-  &:hover {
-    background-color: darken(#007bff, 10%);
-  }
+  // &:hover {
+  //   background-color: darken(#007bff, 10%);
+  // }
 }
 
 .disconnect-button {
   background-color: #dc3545;
 
-  &:hover {
-    background-color: darken(#dc3545, 10%);
-  }
+  // &:hover {
+  //   background-color: (#dc3545, 10%);
+  // }
 }
 
 .wallet-info {
