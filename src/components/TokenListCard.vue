@@ -291,7 +291,7 @@ defineExpose({
 .token-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 300px;
+  max-height: 400px;
   padding-right: 0.5rem;
   margin-top: 1rem;
 

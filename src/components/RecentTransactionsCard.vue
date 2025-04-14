@@ -231,11 +231,6 @@ defineExpose({
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
 }
 
 .card-header {
@@ -311,7 +306,7 @@ defineExpose({
 .transaction-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 300px;
+  max-height: 380px;
   padding-right: 0.5rem;
   margin-top: 1rem;
 
