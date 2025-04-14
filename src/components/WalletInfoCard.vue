@@ -4,7 +4,7 @@
     <div class="info-content">
       <div class="address">
         <span>錢包地址：</span>
-        <span class="value">{{ publicKey?.toBase58() }}</span>
+        <span class="value copy" @click="copyAddress">{{ publicKey?.toBase58() }}</span>
       </div>
       <div class="balance">
         <span>SOL 餘額：</span>
@@ -24,6 +24,12 @@ const props = defineProps<{
 }>()
 
 const solBalance = ref(0)
+
+const copyAddress = () => {
+  if (props.publicKey) {
+    navigator.clipboard.writeText(props.publicKey.toBase58())
+  }
+}
 
 // 監聽 publicKey 的變化並獲取餘額
 watchEffect(async () => {
@@ -68,10 +74,6 @@ defineExpose({
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform 0.3s ease;
 
-  &:hover {
-    transform: scale(1.02);
-  }
-
   h2 {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
@@ -100,6 +102,13 @@ defineExpose({
 
       &:hover {
         background: rgba(255, 255, 255, 0.08);
+      }
+
+      .copy {
+        cursor: pointer;
+        &:hover {
+          color: #ecec51;
+        }
       }
 
       .value {

@@ -1,10 +1,27 @@
 <template>
   <div class="action-card">
-    <h3>最近交易</h3>
+    <div class="card-header">
+      <h3>最近交易</h3>
+      <button class="refresh-btn" @click="refresh" :disabled="loading">
+        <span class="refresh-icon" :class="{ rotating: loading }">⟳</span>
+      </button>
+    </div>
+
     <div class="transaction-list">
-      <div v-if="transactions.length === 0" class="empty-state">
-        <div v-if="loading">載入中...</div>
-        <div v-else>暫無交易記錄</div>
+      <div v-if="loading" class="empty-state">
+        <div class="loading-spinner"></div>
+        <p>載入中...</p>
+      </div>
+      <div v-else-if="error" class="empty-state error">
+        <p>{{ error }}</p>
+        <button class="retry-btn" @click="refresh">重試</button>
+      </div>
+      <div v-else-if="transactions.length === 0" class="empty-state">
+        <p>暫無交易記錄</p>
+        <div class="help-text">
+          <p>您可以使用「轉帳 SOL」功能創建一筆新交易。</p>
+          <p>所有在 Solana 區塊鏈上的交易都會顯示在這裡。</p>
+        </div>
       </div>
       <div v-else v-for="tx in transactions" :key="tx.signature" class="transaction-item">
         <div class="tx-header">
@@ -32,6 +49,7 @@
         </div>
       </div>
     </div>
+
     <div v-if="transactions.length > 0" class="view-all">
       <a
         :href="'https://explorer.solana.com/address/' + publicKey?.toBase58() + '?cluster=devnet'"
@@ -55,13 +73,20 @@ const props = defineProps<{
 
 const transactions = ref<Transaction[]>([])
 const loading = ref(false)
+const error = ref<string | null>(null)
 
 const fetchTransactions = async () => {
-  if (!props.publicKey) return
+  if (!props.publicKey || !props.connection) {
+    error.value = '錢包未連接或連接未初始化'
+    return
+  }
 
   loading.value = true
+  error.value = null
 
   try {
+    console.log('開始獲取交易記錄，公鑰:', props.publicKey.toString())
+
     // 使用 devnet 連接
     const connection = props.connection
 
@@ -71,9 +96,9 @@ const fetchTransactions = async () => {
       { limit: 10 }, // 限制返回的交易數量
     )
 
-    console.log('獲取到的簽名:', signatures)
+    console.log('獲取到的簽名數量:', signatures?.length || 0)
 
-    if (signatures.length === 0) {
+    if (!signatures || signatures.length === 0) {
       transactions.value = []
       loading.value = false
       return
@@ -126,11 +151,13 @@ const fetchTransactions = async () => {
               }
             }
 
+            const txTime = sig.blockTime ? new Date(sig.blockTime * 1000) : new Date()
+
             return {
               signature: sig.signature,
               type,
               amount: amount ? `${amount.toFixed(6)} SOL` : '-',
-              time: new Date(sig.blockTime! * 1000).toLocaleString(),
+              time: txTime.toLocaleString(),
               status: sig.confirmationStatus || 'confirmed',
               memo: sig.memo || '',
             }
@@ -140,7 +167,7 @@ const fetchTransactions = async () => {
               signature: sig.signature,
               type: 'Unknown',
               amount: '-',
-              time: new Date(sig.blockTime! * 1000).toLocaleString(),
+              time: sig.blockTime ? new Date(sig.blockTime * 1000).toLocaleString() : '未知時間',
               status: 'Error',
               memo: '',
             }
@@ -151,8 +178,9 @@ const fetchTransactions = async () => {
 
     transactions.value = transactionDetails
     console.log('處理後的交易記錄:', transactions.value)
-  } catch (error) {
+  } catch (error: any) {
     console.error('獲取交易記錄失敗:', error)
+    error.value = `獲取交易記錄失敗: ${error.message || '未知錯誤'}`
     transactions.value = []
   } finally {
     loading.value = false
@@ -172,6 +200,7 @@ watch(
       await fetchTransactions()
     } else {
       transactions.value = []
+      error.value = null
     }
   },
 )
@@ -198,9 +227,25 @@ defineExpose({
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
+  min-height: 220px;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 
   h3 {
-    margin: 0 0 1rem 0;
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
 
@@ -208,6 +253,59 @@ defineExpose({
       font-size: 1.5rem;
     }
   }
+}
+
+.refresh-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.refresh-icon {
+  font-size: 1.3rem;
+  display: inline-block;
+  transition: transform 0.3s ease;
+
+  &.rotating {
+    animation: rotate 1.5s linear infinite;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: rotate 1s linear infinite;
+  margin-bottom: 0.5rem;
 }
 
 .transaction-list {
@@ -238,11 +336,45 @@ defineExpose({
   .empty-state {
     text-align: center;
     padding: 2rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.7);
     height: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    &.error {
+      color: rgba(255, 100, 100, 0.8);
+    }
+
+    .help-text {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 1rem;
+      border-radius: 8px;
+
+      p {
+        margin: 0.5rem 0;
+      }
+    }
+  }
+
+  .retry-btn {
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
 }
 
@@ -307,6 +439,7 @@ defineExpose({
   }
 
   .tx-link {
+    color: #14f195;
     text-decoration: none;
     font-size: 0.8rem;
 
@@ -319,10 +452,14 @@ defineExpose({
 .view-all {
   text-align: center;
   margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 
   a {
+    color: #14f195;
     text-decoration: none;
     font-size: 0.9rem;
+    font-weight: 500;
 
     &:hover {
       text-decoration: underline;
