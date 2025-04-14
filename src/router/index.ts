@@ -8,8 +8,16 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('../views/WalletView.vue'),
+      meta: {
+        title: 'Solana Demo',
+      },
     },
   ],
+})
+
+router.beforeEach((to, from, next) => {
+  document.title = (to.meta.title as string) || 'Solana Demo'
+  next()
 })
 
 export default router

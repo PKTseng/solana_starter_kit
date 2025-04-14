@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import WalletConnect from '@/components/WalletConnect.vue'
 import WalletInfoCard from '@/components/WalletInfoCard.vue'
 import TransferSolCard from '@/components/TransferSolCard.vue'
@@ -55,7 +55,6 @@ const transactionListCardRef = ref()
 const connected = computed(() => walletStore.connected)
 
 const refreshData = async () => {
-  // 使用 ref 來調用子組件的方法
   if (walletInfoCardRef.value) {
     await walletInfoCardRef.value.refreshBalance()
   }
@@ -66,12 +65,6 @@ const refreshData = async () => {
     await transactionListCardRef.value.refresh()
   }
 }
-
-// 監聽錢包連接狀態變化
-// 不需要在這裡執行額外操作，因為各組件會自行處理其數據加載
-watch(connected, async () => {
-  // 連接狀態變化時，各組件會自動更新其數據
-})
 </script>
 
 <style lang="scss" scoped>
