@@ -61,6 +61,6 @@ const disconnectedWallet = () => walletStore.disconnectWallet()
 .wallet-address {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
 }
 </style>

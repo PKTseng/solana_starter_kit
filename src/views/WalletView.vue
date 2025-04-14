@@ -1,133 +1,176 @@
 <template>
   <div class="wallet-view">
-    <WalletConnect />
+    <div class="header">
+      <h1>Solana 錢包管理</h1>
+      <WalletConnect />
+    </div>
 
     <template v-if="connected">
-      <SendSol />
+      <div class="dashboard">
+        <WalletInfoCard
+          ref="walletInfoCardRef"
+          :publicKey="walletStore.publicKey"
+          :connection="walletStore.connection"
+        />
+
+        <div class="actions-grid">
+          <TransferSolCard @transaction-sent="refreshData" />
+
+          <TokenListCard
+            ref="tokenListCardRef"
+            :publicKey="walletStore.publicKey"
+            :connection="walletStore.connection"
+          />
+
+          <TransactionListCard
+            ref="transactionListCardRef"
+            :publicKey="walletStore.publicKey"
+            :connection="walletStore.connection"
+          />
+        </div>
+      </div>
     </template>
+
+    <div v-else class="welcome-section">
+      <h2>歡迎使用 Solana 錢包</h2>
+      <p>請連接您的錢包以開始使用</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useWalletStore } from '../stores/useWallet'
 import WalletConnect from '../components/WalletConnect.vue'
-import SendSol from '@/components/SendSol.vue'
+import WalletInfoCard from '@/components/WalletInfoCard.vue'
+import TransferSolCard from '@/components/TransferSolCard.vue'
+import TokenListCard from '@/components/TokenListCard.vue'
+import TransactionListCard from '@/components/RecentTransactionsCard.vue'
 
 const walletStore = useWalletStore()
+const walletInfoCardRef = ref()
+const tokenListCardRef = ref()
+const transactionListCardRef = ref()
 
 const connected = computed(() => walletStore.connected)
+
+const refreshData = async () => {
+  // 使用 ref 來調用子組件的方法
+  if (walletInfoCardRef.value) {
+    await walletInfoCardRef.value.refreshBalance()
+  }
+  if (tokenListCardRef.value) {
+    await tokenListCardRef.value.refresh()
+  }
+  if (transactionListCardRef.value) {
+    await transactionListCardRef.value.refresh()
+  }
+}
+
+// 監聽錢包連接狀態變化
+// 不需要在這裡執行額外操作，因為各組件會自行處理其數據加載
+watch(connected, async () => {
+  // 連接狀態變化時，各組件會自動更新其數據
+})
 </script>
 
 <style lang="scss" scoped>
-@use 'sass:color';
-
 .wallet-view {
+  min-height: calc(100vh - 5rem);
+  padding: 1rem;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #e0e0e0;
+  font-family: 'Roboto', sans-serif;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  background: linear-gradient(135deg, #6a11cb, #2575fc);
-  color: #ffffff;
-  font-family: 'Arial', sans-serif;
 
-  .connect-button,
-  .disconnect-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #fff;
-    background-color: #007bff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-
-    &:hover {
-      background-color: color.adjust(#007bff, $lightness: -10%);
-    }
-  }
-
-  .disconnect-button {
-    background-color: #dc3545;
-
-    &:hover {
-      background-color: color.adjust(#dc3545, $lightness: -10%);
-    }
-  }
-
-  .wallet-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 2rem;
-
-    .wallet-address {
-      font-size: 16px;
-      font-weight: bold;
-      color: #ffffff;
-    }
-  }
-
-  .transfer-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    max-width: 400px;
-    width: 100%;
+  @media (min-width: 768px) {
     padding: 2rem;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
 
-    .transfer-input {
-      padding: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 10px;
-      font-size: 1rem;
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.1);
-      transition: all 0.2s ease;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.5rem;
 
-      &:focus {
-        outline: none;
-        border-color: #9945ff;
-        box-shadow: 0 0 0 3px rgba(153, 69, 255, 0.1);
-      }
+  @media (min-width: 768px) {
+    margin-bottom: 2rem;
+  }
 
-      &::placeholder {
-        color: rgba(255, 255, 255, 0.5);
-      }
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+
+    @media (min-width: 768px) {
+      font-size: 2.5rem;
     }
+  }
+}
 
-    .transfer-button {
-      padding: 1rem;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #9945ff, #8034db);
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  flex: 1;
 
-      &:hover:not(:disabled) {
-        background: linear-gradient(135deg, #8034db, #6a2bb8);
-      }
+  @media (min-width: 768px) {
+    gap: 2.5rem;
+  }
+}
 
-      &:disabled {
-        background: rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.5);
-        cursor: not-allowed;
-        opacity: 0.7;
-      }
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  flex: 1;
 
-      &:active:not(:disabled) {
-        transform: translateY(1px);
-      }
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+  }
+}
+
+.welcome-section {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  margin-top: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  @media (min-width: 768px) {
+    padding: 4rem 2rem;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+
+    @media (min-width: 768px) {
+      font-size: 2.2rem;
+    }
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+
+    @media (min-width: 768px) {
+      font-size: 1.3rem;
     }
   }
 }

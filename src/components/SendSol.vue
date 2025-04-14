@@ -13,6 +13,10 @@
     <button :disabled="!isValid" class="transfer-button" @click="sendSol">
       {{ loading ? 'Sending...' : 'Send SOL' }}
     </button>
+
+    <div v-if="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
   </div>
 </template>
 
@@ -26,6 +30,7 @@ const walletStore = useWalletStore()
 const loading = ref(false)
 const recipient = ref('')
 const amount = ref('')
+const errorMessage = ref('')
 
 const isValid = computed(() => {
   try {
@@ -39,36 +44,97 @@ const isValid = computed(() => {
 
 const sendSol = async () => {
   if (!walletStore.publicKey) {
-    console.log('wallet is not connected')
+    console.log('錢包未連接')
+    errorMessage.value = '錢包未連接'
     return
   }
 
   loading.value = true
+  errorMessage.value = ''
+
   try {
+    console.log('開始交易流程')
+
+    // 檢查 Phantom 錢包是否存在
+    const { solana } = window
+    if (!solana) {
+      throw new Error('找不到 Phantom 錢包擴展程序')
+    }
+
+    console.log('檢測到 Phantom 錢包:', solana)
+
     // 建立交易
     const transaction = new Transaction()
+    console.log('建立交易物件')
 
     // 設置費用支付者為發送者的錢包
     transaction.feePayer = walletStore.publicKey
 
     // 使用 walletStore 中的 connection 獲取最新的 blockhash
+    console.log('正在獲取最新的 blockhash...')
     const { blockhash, lastValidBlockHeight } = await walletStore.connection.getLatestBlockhash()
     transaction.recentBlockhash = blockhash
     transaction.lastValidBlockHeight = lastValidBlockHeight
+    console.log('成功獲取 blockhash:', blockhash)
+
+    // 創建接收方公鑰物件
+    const receiverPublicKey = new PublicKey(recipient.value)
+    console.log('接收方地址:', recipient.value)
 
     // 添加轉帳指令
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: walletStore.publicKey,
-        toPubkey: new PublicKey(recipient.value),
-        lamports: +amount.value * LAMPORTS_PER_SOL,
-      }),
-    )
+    const transferInstruction = SystemProgram.transfer({
+      fromPubkey: walletStore.publicKey,
+      toPubkey: receiverPublicKey,
+      lamports: +amount.value * LAMPORTS_PER_SOL,
+    })
 
-    const { solana } = window
-    const signedTransaction = await solana?.signAndSendTransaction(transaction)
+    transaction.add(transferInstruction)
+    console.log('已添加轉帳指令，金額:', amount.value, 'SOL')
+
+    console.log('準備請求錢包簽名...')
+    console.log('solana?.signAndSendTransaction 方法是否存在:', !!solana?.signAndSendTransaction)
+
+    // 使用更健壯的方式調用 signAndSendTransaction
+    if (typeof solana.signAndSendTransaction !== 'function') {
+      // 如果 signAndSendTransaction 不存在，嘗試替代方法
+      console.log('signAndSendTransaction 方法不存在，嘗試替代方法')
+
+      if (typeof solana.signTransaction === 'function') {
+        // 先簽名
+        console.log('嘗試使用 signTransaction')
+        const signedTx = await solana.signTransaction(transaction)
+
+        // 然後發送已簽名的交易
+        const signature = await walletStore.connection.sendRawTransaction(signedTx.serialize())
+        console.log('交易已發送，簽名:', signature)
+
+        // 確認交易
+        const confirmation = await walletStore.connection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        })
+
+        console.log('交易已確認:', confirmation)
+        console.log(`https://explorer.solana.com/tx/${signature}?cluster=devnet`)
+
+        // 成功後清空表單
+        recipient.value = ''
+        amount.value = ''
+        return
+      } else {
+        throw new Error('錢包不支持所需的簽名方法')
+      }
+    }
+
+    // 如果 signAndSendTransaction 方法存在，則使用它
+    console.log('調用 signAndSendTransaction...')
+    const signedTransaction = await solana.signAndSendTransaction(transaction)
+    console.log('交易已簽名並發送:', signedTransaction)
 
     if (signedTransaction?.signature) {
+      console.log('獲得交易簽名:', signedTransaction.signature)
+
       const confirmationStrategy = {
         signature: signedTransaction.signature,
         blockhash: transaction.recentBlockhash!,
@@ -76,17 +142,23 @@ const sendSol = async () => {
       }
 
       // 使用 walletStore 中的 connection 確認交易
+      console.log('等待交易確認...')
       await walletStore.connection.confirmTransaction(confirmationStrategy)
+      console.log('交易已確認!')
 
       console.log(
         `Transaction confirmed: https://explorer.solana.com/tx/${signedTransaction.signature}?cluster=devnet`,
       )
-    }
 
-    recipient.value = ''
-    amount.value = ''
-  } catch (error) {
-    console.error('Error:', error)
+      // 成功後清空表單
+      recipient.value = ''
+      amount.value = ''
+    } else {
+      throw new Error('未能獲取交易簽名')
+    }
+  } catch (error: any) {
+    console.error('錯誤詳情:', error)
+    errorMessage.value = `交易失敗: ${error.message || '未知錯誤'}`
   } finally {
     loading.value = false
   }
@@ -150,6 +222,16 @@ const sendSol = async () => {
     &:active:not(:disabled) {
       transform: translateY(1px);
     }
+  }
+
+  .error-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    font-size: 0.875rem;
+    text-align: center;
   }
 }
 </style>
