@@ -27,11 +27,6 @@ defineEmits<{
     transform 0.3s ease,
     box-shadow 0.3s ease;
 
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  }
-
   h3 {
     margin: 0 0 1rem 0;
     font-size: 1.25rem;
