@@ -40,12 +40,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useWalletStore } from '../stores/useWallet'
-import WalletConnect from '../components/WalletConnect.vue'
+import WalletConnect from '@/components/WalletConnect.vue'
 import WalletInfoCard from '@/components/WalletInfoCard.vue'
 import TransferSolCard from '@/components/TransferSolCard.vue'
 import TokenListCard from '@/components/TokenListCard.vue'
 import TransactionListCard from '@/components/RecentTransactionsCard.vue'
+import { useWalletStore } from '@/stores/useWallet'
 
 const walletStore = useWalletStore()
 const walletInfoCardRef = ref()
