@@ -225,8 +225,6 @@ const sendSol = async () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 400px;
-  margin: 2rem auto;
   padding: 2rem;
   border-radius: 16px;
   background: #ffffff;
@@ -269,6 +267,7 @@ const sendSol = async () => {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  margin: 0 auto;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
