@@ -1,13 +1,13 @@
 <template>
   <div class="wallet-info-card">
-    <h2>錢包資訊</h2>
+    <h2>Wallet Info</h2>
     <div class="info-content">
       <div class="address">
-        <span>錢包地址：</span>
+        <span>Wallet Address:</span>
         <span class="value copy" @click="copyAddress">{{ publicKey?.toBase58() }}</span>
       </div>
       <div class="balance">
-        <span>SOL 餘額：</span>
+        <span>SOL Balance:</span>
         <span class="value">{{ solBalance }} SOL</span>
       </div>
     </div>
@@ -16,11 +16,12 @@
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
+
 import { LAMPORTS_PER_SOL, type PublicKey } from '@solana/web3.js'
 
 const props = defineProps<{
   publicKey: PublicKey | null
-  connection: any // 使用 any 類型來避免型別不匹配問題
+  connection: any // Use any type to avoid type mismatch issues
 }>()
 
 const solBalance = ref(0)
@@ -31,14 +32,14 @@ const copyAddress = () => {
   }
 }
 
-// 監聽 publicKey 的變化並獲取餘額
+// Watch for publicKey changes and fetch balance
 watchEffect(async () => {
   if (props.publicKey) {
     try {
       const balance = await props.connection.getBalance(props.publicKey)
       solBalance.value = balance / LAMPORTS_PER_SOL
     } catch (error) {
-      console.error('獲取餘額錯誤:', error)
+      console.error('Error fetching balance:', error)
       solBalance.value = 0
     }
   } else {
@@ -46,20 +47,20 @@ watchEffect(async () => {
   }
 })
 
-// 對外暴露 refreshBalance 方法，用於手動刷新餘額
+// Expose refreshBalance method for manual balance refresh
 const refreshBalance = async () => {
   if (props.publicKey) {
     try {
       const balance = await props.connection.getBalance(props.publicKey)
       solBalance.value = balance / LAMPORTS_PER_SOL
     } catch (error) {
-      console.error('獲取餘額錯誤:', error)
+      console.error('Error fetching balance:', error)
       solBalance.value = 0
     }
   }
 }
 
-// 將 refreshBalance 方法暴露給父組件
+// Expose refreshBalance method to parent component
 defineExpose({
   refreshBalance,
 })

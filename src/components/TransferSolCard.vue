@@ -1,6 +1,6 @@
 <template>
   <div class="action-card">
-    <h3>轉帳 SOL</h3>
+    <h3>Send SOL</h3>
     <SendSol @transaction-sent="$emit('transaction-sent')" />
   </div>
 </template>

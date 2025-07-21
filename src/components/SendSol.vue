@@ -1,11 +1,6 @@
 <template>
   <div class="transfer-form">
-    <input
-      v-model="recipient"
-      placeholder="Recipient address"
-      class="transfer-input"
-      :disabled="loading"
-    />
+    <input v-model="recipient" placeholder="Recipient address" class="transfer-input" :disabled="loading" />
     <input
       v-model="amount"
       type="number"
@@ -24,15 +19,17 @@
       {{ errorMessage }}
     </div>
 
-    <!-- 使用全局 Loading 組件 -->
+    <!-- Global Loading Component -->
     <LoadingOverlay :visible="showLoading" :title="loadingTitle" :status="loadingStatus" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
+
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js'
+
 import { useWalletStore } from '../stores/useWallet'
-import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import LoadingOverlay from './LoadingOverlay.vue'
 
 const emit = defineEmits<{
@@ -46,10 +43,10 @@ const recipient = ref('')
 const amount = ref('')
 const errorMessage = ref('')
 
-// Loading 狀態
+// Loading states
 const showLoading = ref(false)
-const loadingTitle = ref('交易處理中...')
-const loadingStatus = ref('準備交易中')
+const loadingTitle = ref('Processing Transaction...')
+const loadingStatus = ref('Preparing transaction')
 
 const isValid = computed(() => {
   try {
@@ -60,60 +57,60 @@ const isValid = computed(() => {
   }
 })
 
-// 更新載入狀態
+// Update loading status
 const updateLoadingStatus = (status: string) => {
   loadingStatus.value = status
 }
 
-// 更新載入標題
+// Update loading title
 const updateLoadingTitle = (title: string) => {
   loadingTitle.value = title
 }
 
 const sendSol = async () => {
   if (!walletStore.publicKey) {
-    console.log('錢包未連接')
-    errorMessage.value = '錢包未連接'
+    console.log('Wallet not connected')
+    errorMessage.value = 'Wallet not connected'
     return
   }
 
   loading.value = true
   errorMessage.value = ''
-  showLoading.value = true // 顯示 loading
-  updateLoadingStatus('準備交易中')
+  showLoading.value = true // Show loading
+  updateLoadingStatus('Preparing transaction')
 
   try {
-    console.log('開始交易流程')
+    console.log('Starting transaction process')
 
-    // 檢查 Phantom 錢包是否存在
+    // Check if Phantom wallet exists
     const { solana } = window
     if (!solana) {
-      throw new Error('找不到 Phantom 錢包擴展程序')
+      throw new Error('Phantom wallet extension not found')
     }
 
-    console.log('檢測到 Phantom 錢包:', solana)
+    console.log('Phantom wallet detected:', solana)
 
-    // 建立交易
+    // Create transaction
     const transaction = new Transaction()
-    console.log('建立交易物件')
+    console.log('Transaction object created')
 
-    // 設置費用支付者為發送者的錢包
+    // Set fee payer to sender's wallet
     transaction.feePayer = walletStore.publicKey
 
-    // 使用 walletStore 中的 connection 獲取最新的 blockhash
-    console.log('正在獲取最新的 blockhash...')
-    updateLoadingStatus('獲取網絡狀態...')
+    // Get latest blockhash using connection from walletStore
+    console.log('Fetching latest blockhash...')
+    updateLoadingStatus('Getting network status...')
 
     const { blockhash, lastValidBlockHeight } = await walletStore.connection.getLatestBlockhash()
     transaction.recentBlockhash = blockhash
     transaction.lastValidBlockHeight = lastValidBlockHeight
-    console.log('成功獲取 blockhash:', blockhash)
+    console.log('Successfully obtained blockhash:', blockhash)
 
-    // 創建接收方公鑰物件
+    // Create receiver public key object
     const receiverPublicKey = new PublicKey(recipient.value)
-    console.log('接收方地址:', recipient.value)
+    console.log('Receiver address:', recipient.value)
 
-    // 添加轉帳指令
+    // Add transfer instruction
     const transferInstruction = SystemProgram.transfer({
       fromPubkey: walletStore.publicKey,
       toPubkey: receiverPublicKey,
@@ -121,31 +118,31 @@ const sendSol = async () => {
     })
 
     transaction.add(transferInstruction)
-    console.log('已添加轉帳指令，金額:', amount.value, 'SOL')
+    console.log('Transfer instruction added, amount:', amount.value, 'SOL')
 
-    console.log('準備請求錢包簽名...')
-    updateLoadingStatus('請在錢包中確認交易...')
+    console.log('Preparing wallet signature request...')
+    updateLoadingStatus('Please confirm transaction in wallet...')
 
-    // 使用更健壯的方式調用 signAndSendTransaction
+    // Use robust method to call signAndSendTransaction
     if (typeof solana.signAndSendTransaction !== 'function') {
-      // 如果 signAndSendTransaction 不存在，嘗試替代方法
-      console.log('signAndSendTransaction 方法不存在，嘗試替代方法')
+      // If signAndSendTransaction doesn't exist, try alternative method
+      console.log('signAndSendTransaction method not available, trying alternative')
 
       if (typeof solana.signTransaction === 'function') {
-        // 先簽名
-        console.log('嘗試使用 signTransaction')
-        updateLoadingStatus('等待錢包簽名...')
+        // Sign first
+        console.log('Attempting to use signTransaction')
+        updateLoadingStatus('Waiting for wallet signature...')
 
         const signedTx = await solana.signTransaction(transaction)
 
-        // 然後發送已簽名的交易
-        updateLoadingStatus('發送交易到網絡...')
+        // Then send signed transaction
+        updateLoadingStatus('Sending transaction to network...')
         const signature = await walletStore.connection.sendRawTransaction(signedTx.serialize())
-        console.log('交易已發送，簽名:', signature)
+        console.log('Transaction sent, signature:', signature)
 
-        // 確認交易
-        updateLoadingStatus('等待網絡確認...')
-        updateLoadingTitle('交易確認中...')
+        // Confirm transaction
+        updateLoadingStatus('Waiting for network confirmation...')
+        updateLoadingTitle('Confirming Transaction...')
 
         const confirmation = await walletStore.connection.confirmTransaction({
           signature,
@@ -153,34 +150,34 @@ const sendSol = async () => {
           lastValidBlockHeight,
         })
 
-        console.log('交易已確認:', confirmation)
-        updateLoadingStatus('交易已完成！重新整理數據...')
+        console.log('Transaction confirmed:', confirmation)
+        updateLoadingStatus('Transaction completed! Refreshing data...')
 
         console.log(`https://explorer.solana.com/tx/${signature}?cluster=devnet`)
 
-        // 成功後清空表單
+        // Clear form after success
         recipient.value = ''
         amount.value = ''
 
-        // 通知父組件交易已完成
+        // Notify parent component transaction completed
         emit('transaction-sent')
         return
       } else {
-        throw new Error('錢包不支持所需的簽名方法')
+        throw new Error('Wallet does not support required signing methods')
       }
     }
 
-    // 如果 signAndSendTransaction 方法存在，則使用它
-    console.log('調用 signAndSendTransaction...')
-    updateLoadingStatus('等待錢包簽名...')
+    // If signAndSendTransaction method exists, use it
+    console.log('Calling signAndSendTransaction...')
+    updateLoadingStatus('Waiting for wallet signature...')
 
     const signedTransaction = await solana.signAndSendTransaction(transaction)
-    console.log('交易已簽名並發送:', signedTransaction)
+    console.log('Transaction signed and sent:', signedTransaction)
 
     if (signedTransaction?.signature) {
-      console.log('獲得交易簽名:', signedTransaction.signature)
-      updateLoadingStatus('交易已發送，等待確認...')
-      updateLoadingTitle('交易確認中...')
+      console.log('Transaction signature obtained:', signedTransaction.signature)
+      updateLoadingStatus('Transaction sent, waiting for confirmation...')
+      updateLoadingTitle('Confirming Transaction...')
 
       const confirmationStrategy = {
         signature: signedTransaction.signature,
@@ -188,31 +185,29 @@ const sendSol = async () => {
         lastValidBlockHeight: transaction.lastValidBlockHeight!,
       }
 
-      // 使用 walletStore 中的 connection 確認交易
-      console.log('等待交易確認...')
+      // Use connection from walletStore to confirm transaction
+      console.log('Waiting for transaction confirmation...')
       await walletStore.connection.confirmTransaction(confirmationStrategy)
-      console.log('交易已確認!')
-      updateLoadingStatus('交易已完成！重新整理數據...')
+      console.log('Transaction confirmed!')
+      updateLoadingStatus('Transaction completed! Refreshing data...')
 
-      console.log(
-        `Transaction confirmed: https://explorer.solana.com/tx/${signedTransaction.signature}?cluster=devnet`,
-      )
+      console.log(`Transaction confirmed: https://explorer.solana.com/tx/${signedTransaction.signature}?cluster=devnet`)
 
-      // 成功後清空表單
+      // Clear form after success
       recipient.value = ''
       amount.value = ''
 
-      // 通知父組件交易已完成
+      // Notify parent component transaction completed
       emit('transaction-sent')
     } else {
-      throw new Error('未能獲取交易簽名')
+      throw new Error('Failed to obtain transaction signature')
     }
   } catch (error: any) {
-    console.error('錯誤詳情:', error)
-    errorMessage.value = `交易失敗: ${error.message || '未知錯誤'}`
+    console.error('Error details:', error)
+    errorMessage.value = `Transaction failed: ${error.message || 'Unknown error'}`
   } finally {
     loading.value = false
-    // 等待一小段時間後隱藏 loading，以便用戶能夠看到最終狀態
+    // Wait a moment before hiding loading so user can see final status
     setTimeout(() => {
       showLoading.value = false
     }, 1000)

@@ -1,7 +1,7 @@
 <template>
   <div class="action-card">
     <div class="card-header">
-      <h3>代幣列表</h3>
+      <h3>Token List</h3>
       <button class="refresh-btn" @click="refresh" :disabled="loading">
         <span class="refresh-icon" :class="{ rotating: loading }">⟳</span>
       </button>
@@ -10,28 +10,25 @@
     <div class="token-list">
       <div v-if="loading" class="empty-state">
         <div class="loading-spinner"></div>
-        <p>載入中...</p>
+        <p>Loading...</p>
       </div>
       <div v-else-if="error" class="empty-state error">
         <p>{{ error }}</p>
-        <button class="retry-btn" @click="refresh">重試</button>
+        <button class="retry-btn" @click="refresh">Retry</button>
       </div>
       <div v-else-if="tokens.length === 0" class="empty-state">
-        <p>暫無代幣</p>
+        <p>No tokens found</p>
         <div class="help-text">
-          <p>您正在連接到 Devnet。要獲取測試代幣，您可以：</p>
+          <p>You are connected to Devnet. To get test tokens, you can:</p>
           <ol>
             <li>
-              使用
-              <a href="https://solfaucet.com/" target="_blank" rel="noopener noreferrer"
-                >Solana Faucet</a
-              >
-              獲取測試 SOL
+              Use
+              <a href="https://solfaucet.com/" target="_blank" rel="noopener noreferrer">Solana Faucet</a>
+              to get test SOL
             </li>
             <li>
-              使用<a href="https://spl-token-faucet.com/" target="_blank" rel="noopener noreferrer"
-                >SPL 代幣水龍頭</a
-              >創建測試代幣
+              Use<a href="https://spl-token-faucet.com/" target="_blank" rel="noopener noreferrer">SPL Token Faucet</a
+              >to create test tokens
             </li>
           </ol>
         </div>
@@ -54,8 +51,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+
 import { PublicKey } from '@solana/web3.js'
+
 import type { Token } from '../types/wallet'
 
 const props = defineProps<{
@@ -67,23 +66,23 @@ const tokens = ref<Token[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-// 生成漸變顏色
+// Generate gradient color
 const generateGradient = (mintAddress: string) => {
-  // 使用 mint 地址的前 6 位作為顏色
+  // Use first 6 characters of mint address as color
   const hash = mintAddress.slice(0, 6)
   const color1 = `#${hash.slice(0, 3)}`
   const color2 = `#${hash.slice(3, 6)}`
   return `linear-gradient(135deg, ${color1}, ${color2})`
 }
 
-// 縮短地址顯示
+// Shorten address display
 const shortenAddress = (address: string) => {
   return `${address.slice(0, 4)}...${address.slice(-4)}`
 }
 
 const fetchTokens = async () => {
   if (!props.publicKey || !props.connection) {
-    error.value = '錢包未連接或連接未初始化'
+    error.value = 'Wallet not connected or connection not initialized'
     return
   }
 
@@ -91,28 +90,28 @@ const fetchTokens = async () => {
   error.value = null
 
   try {
-    console.log('開始獲取代幣賬戶，公鑰:', props.publicKey.toString())
+    console.log('Starting to fetch token accounts, public key:', props.publicKey.toString())
     const connection = props.connection
 
-    // 使用 RPC 調用獲取所有代幣賬戶
+    // Use RPC call to get all token accounts
     const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
       props.publicKey,
       {
-        programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token 程序 ID
+        programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program ID
       },
       'confirmed',
     )
 
-    console.log('獲取的代幣賬戶數量:', tokenAccounts?.value?.length || 0)
+    console.log('Number of token accounts retrieved:', tokenAccounts?.value?.length || 0)
 
-    // 如果沒有代幣賬戶，則返回空數組
+    // If no token accounts, return empty array
     if (!tokenAccounts?.value || tokenAccounts.value.length === 0) {
       tokens.value = []
       loading.value = false
       return
     }
 
-    // 處理代幣資訊
+    // Process token information
     const tokenData = await Promise.all(
       tokenAccounts.value.map(async (tokenAccount: any) => {
         try {
@@ -121,17 +120,17 @@ const fetchTokens = async () => {
           const balance = accountData.tokenAmount.uiAmount
           const decimals = accountData.tokenAmount.decimals
 
-          // 確保我們只顯示有餘額的代幣 (過濾掉 0 餘額)
+          // Only show tokens with balance (filter out 0 balance)
           if (balance === 0) {
             return null
           }
 
-          // 獲取代幣元數據 (如果可用)
+          // Get token metadata (if available)
           let name = `Unknown Token`
           let symbol = mint.substring(0, 4)
 
           try {
-            // 嘗試從 Solana 上獲取代幣元數據
+            // Try to get token metadata from Solana
             const tokenInfo = await connection.getParsedAccountInfo(new PublicKey(mint))
             if (tokenInfo.value?.data && 'parsed' in tokenInfo.value.data) {
               const parsedData = tokenInfo.value.data.parsed
@@ -141,7 +140,7 @@ const fetchTokens = async () => {
               }
             }
           } catch (error) {
-            console.warn(`獲取代幣 ${mint} 元數據失敗:`, error)
+            console.warn(`Failed to fetch token metadata for ${mint}:`, error)
           }
 
           return {
@@ -154,30 +153,30 @@ const fetchTokens = async () => {
             decimals,
           }
         } catch (err) {
-          console.error(`處理代幣賬戶失敗:`, err)
+          console.error(`Failed to process token account:`, err)
           return null
         }
       }),
     )
 
-    // 過濾掉處理失敗或餘額為 0 的代幣
+    // Filter out failed processing or 0 balance tokens
     tokens.value = tokenData.filter((token) => token !== null) as Token[]
-    console.log('處理後的代幣列表:', tokens.value)
+    console.log('Processed token list:', tokens.value)
   } catch (error: any) {
-    console.error('獲取代幣列表失敗:', error)
-    error.value = `獲取代幣列表失敗: ${error.message || '未知錯誤'}`
+    console.error('Failed to fetch token list:', error)
+    error.value = `Failed to fetch token list: ${error.message || 'Unknown error'}`
     tokens.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 對外暴露刷新方法
+// Expose refresh method to external components
 const refresh = async () => {
   await fetchTokens()
 }
 
-// 監聽 publicKey 的變化
+// Watch for publicKey changes
 watch(
   () => props.publicKey,
   async (newValue) => {
@@ -190,14 +189,14 @@ watch(
   },
 )
 
-// 初始化時獲取代幣列表
+// Fetch token list on initial mount
 onMounted(async () => {
   if (props.publicKey) {
     await fetchTokens()
   }
 })
 
-// 暴露方法給父組件
+// Expose methods to parent component
 defineExpose({
   refresh,
 })

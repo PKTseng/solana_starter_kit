@@ -9,6 +9,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import { useWalletStore } from '../stores/useWallet.ts'
 
 const walletStore = useWalletStore()

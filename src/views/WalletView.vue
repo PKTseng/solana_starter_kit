@@ -1,7 +1,7 @@
 <template>
   <div class="wallet-view">
     <div class="header">
-      <h1>Solana 錢包管理</h1>
+      <h1>Solana Wallet</h1>
       <WalletConnect />
     </div>
 
@@ -32,19 +32,20 @@
     </template>
 
     <div v-else class="welcome-section">
-      <h2>歡迎使用 Solana 錢包</h2>
-      <p>請連接您的錢包以開始使用</p>
+      <h2>Welcome to Solana Wallet</h2>
+      <p>Please connect your wallet to get started</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+
+import TransactionListCard from '@/components/RecentTransactionsCard.vue'
+import TokenListCard from '@/components/TokenListCard.vue'
+import TransferSolCard from '@/components/TransferSolCard.vue'
 import WalletConnect from '@/components/WalletConnect.vue'
 import WalletInfoCard from '@/components/WalletInfoCard.vue'
-import TransferSolCard from '@/components/TransferSolCard.vue'
-import TokenListCard from '@/components/TokenListCard.vue'
-import TransactionListCard from '@/components/RecentTransactionsCard.vue'
 import { useWalletStore } from '@/stores/useWallet'
 
 const walletStore = useWalletStore()
